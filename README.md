@@ -31,5 +31,5 @@ npm start
 ```
 
 ### Тестовые аккаунты
-- Завуч: admin / password123
-- Учитель: teacher1 / password123 
+- Завуч: deputy3 / password12345
+- Учитель: teacher1 / password12345
