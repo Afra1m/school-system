@@ -112,8 +112,8 @@ func UpdateTeacher(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := database.DB.Exec(`UPDATE teachers SET full_name = $1, subject_id = $2, room_number = $3 WHERE id = $4`,
-		teacher.FullName, teacher.SubjectID, teacher.RoomNumber, id)
+	_, err := database.DB.Exec(`UPDATE teachers SET full_name = $1, room_number = $2 WHERE id = $3`,
+		teacher.FullName, teacher.RoomNumber, id)
 	if err != nil {
 		log.Printf("Ошибка при обновлении учителя с ID %s: %v", id, err)
 		http.Error(w, "Ошибка при обновлении данных учителя", http.StatusInternalServerError)

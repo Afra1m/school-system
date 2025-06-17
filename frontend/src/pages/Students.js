@@ -27,6 +27,8 @@ function Students() {
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [newStudent, setNewStudent] = useState({
@@ -126,6 +128,38 @@ function Students() {
     }
   };
 
+  const handleEditClick = (student) => {
+    setEditingStudent(student);
+    setEditOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setEditOpen(false);
+    setEditingStudent(null);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditingStudent(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleEditSubmit = async () => {
+    try {
+      await axios.put(`http://localhost:8000/students/${editingStudent.id}`, editingStudent, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      handleEditClose();
+      fetchStudents();
+    } catch (error) {
+      console.error('Ошибка при обновлении ученика:', error);
+    }
+  };
+
   // Получаем уникальные классы для фильтра
   const uniqueClasses = [...new Set(students.map(student => student.class_name))].sort();
 
@@ -189,6 +223,7 @@ function Students() {
                     color="primary"
                     size="small"
                     sx={{ mr: 1 }}
+                    onClick={() => handleEditClick(student)}
                   >
                     Редактировать
                   </Button>
@@ -237,6 +272,40 @@ function Students() {
           <Button onClick={handleClose}>Отмена</Button>
           <Button onClick={handleSubmit} variant="contained" color="primary">
             Добавить
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Диалог редактирования ученика */}
+      <Dialog open={editOpen} onClose={handleEditClose}>
+        <DialogTitle>Редактировать ученика</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            name="full_name"
+            label="ФИО"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={editingStudent?.full_name}
+            onChange={handleEditChange}
+          />
+          <TextField
+            margin="dense"
+            name="class_name"
+            label="Класс"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={editingStudent?.class_name}
+            onChange={handleEditChange}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditClose}>Отмена</Button>
+          <Button onClick={handleEditSubmit} variant="contained" color="primary">
+            Сохранить
           </Button>
         </DialogActions>
       </Dialog>

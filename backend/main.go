@@ -153,7 +153,11 @@ func main() {
 	r.HandleFunc("/students/{id}", handlers.UpdateStudent).Methods("PUT")
 	r.HandleFunc("/teachers/{id}", handlers.UpdateTeacher).Methods("PUT")
 	r.HandleFunc("/subjects/{id}", handlers.UpdateSubject).Methods("PUT")
-	r.HandleFunc("/grades/{id}", handlers.UpdateGrade).Methods("PUT")
+	r.Handle("/grades/{id}", middleware.AuthMiddleware(
+		http.HandlerFunc(
+			middleware.RequireRole("deputy", "teacher")(handlers.UpdateGrade),
+		),
+	)).Methods("PUT")
 
 	// ====== DELETE Requests ======
 	log.Printf("Регистрация DELETE маршрутов...")

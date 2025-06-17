@@ -38,6 +38,8 @@ function Grades() {
     grade: '',
     quarter: '',
   });
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingGrade, setEditingGrade] = useState(null);
 
   useEffect(() => {
     fetchGrades();
@@ -70,7 +72,14 @@ function Grades() {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-      setGrades(response.data);
+      // Сортируем оценки по ID ученика и предмета
+      const sortedGrades = response.data.sort((a, b) => {
+        if (a.student_id !== b.student_id) {
+          return a.student_id - b.student_id;
+        }
+        return a.subject_id - b.subject_id;
+      });
+      setGrades(sortedGrades);
     } catch (error) {
       console.error('Ошибка при получении оценок:', error);
     }
@@ -182,6 +191,38 @@ function Grades() {
     return subject ? subject.name : '';
   };
 
+  const handleEditClick = (grade) => {
+    setEditingGrade(grade);
+    setEditOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setEditOpen(false);
+    setEditingGrade(null);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditingGrade(prev => ({
+      ...prev,
+      [name]: name === 'grade' || name === 'quarter' ? parseInt(value) || '' : value,
+    }));
+  };
+
+  const handleEditSubmit = async () => {
+    try {
+      await axios.put(`http://localhost:8000/grades/${editingGrade.id}`, editingGrade, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      handleEditClose();
+      fetchGrades();
+    } catch (error) {
+      console.error('Ошибка при обновлении оценки:', error);
+    }
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -258,6 +299,7 @@ function Grades() {
                     color="primary"
                     size="small"
                     sx={{ mr: 1 }}
+                    onClick={() => handleEditClick(grade)}
                   >
                     Редактировать
                   </Button>
@@ -356,6 +398,82 @@ function Grades() {
           <Button onClick={handleClose}>Отмена</Button>
           <Button onClick={handleSubmit} variant="contained" color="primary">
             Добавить
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={editOpen} onClose={handleEditClose}>
+        <DialogTitle>Редактировать оценку</DialogTitle>
+        <DialogContent>
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Ученик</InputLabel>
+            <Select
+              name="student_id"
+              value={editingGrade?.student_id || ''}
+              label="Ученик"
+              onChange={handleEditChange}
+            >
+              {students.map((student) => (
+                <MenuItem key={student.id} value={student.id}>
+                  {student.full_name} ({student.class_name})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Предмет</InputLabel>
+            <Select
+              name="subject_id"
+              value={editingGrade?.subject_id || ''}
+              label="Предмет"
+              onChange={handleEditChange}
+            >
+              {subjects.map((subject) => (
+                <MenuItem key={subject.id} value={subject.id}>
+                  {subject.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            margin="dense"
+            name="grade"
+            label="Оценка"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={editingGrade?.grade || ''}
+            onChange={handleEditChange}
+            inputProps={{ 
+              min: 2, 
+              max: 5,
+              step: 1
+            }}
+            error={Boolean(editingGrade?.grade && (editingGrade.grade < 2 || editingGrade.grade > 5))}
+            helperText={editingGrade?.grade && (editingGrade.grade < 2 || editingGrade.grade > 5) ? "Оценка должна быть от 2 до 5" : ""}
+          />
+          <TextField
+            margin="dense"
+            name="quarter"
+            label="Четверть"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={editingGrade?.quarter || ''}
+            onChange={handleEditChange}
+            inputProps={{ 
+              min: 1, 
+              max: 4,
+              step: 1
+            }}
+            error={Boolean(editingGrade?.quarter && (editingGrade.quarter < 1 || editingGrade.quarter > 4))}
+            helperText={editingGrade?.quarter && (editingGrade.quarter < 1 || editingGrade.quarter > 4) ? "Четверть должна быть от 1 до 4" : ""}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditClose}>Отмена</Button>
+          <Button onClick={handleEditSubmit} variant="contained" color="primary">
+            Сохранить
           </Button>
         </DialogActions>
       </Dialog>

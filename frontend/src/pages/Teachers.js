@@ -22,6 +22,8 @@ import axios from 'axios';
 function Teachers() {
   const [teachers, setTeachers] = useState([]);
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState(null);
   const [newTeacher, setNewTeacher] = useState({
     full_name: '',
     room_number: '',
@@ -92,6 +94,38 @@ function Teachers() {
     }
   };
 
+  const handleEditClick = (teacher) => {
+    setEditingTeacher(teacher);
+    setEditOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setEditOpen(false);
+    setEditingTeacher(null);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditingTeacher(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleEditSubmit = async () => {
+    try {
+      await axios.put(`http://localhost:8000/teachers/${editingTeacher.id}`, editingTeacher, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      handleEditClose();
+      fetchTeachers();
+    } catch (error) {
+      console.error('Ошибка при обновлении учителя:', error);
+    }
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -125,6 +159,7 @@ function Teachers() {
                     color="primary"
                     size="small"
                     sx={{ mr: 1 }}
+                    onClick={() => handleEditClick(teacher)}
                   >
                     Редактировать
                   </Button>
@@ -173,6 +208,40 @@ function Teachers() {
           <Button onClick={handleClose}>Отмена</Button>
           <Button onClick={handleSubmit} variant="contained" color="primary">
             Добавить
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Диалог редактирования учителя */}
+      <Dialog open={editOpen} onClose={handleEditClose}>
+        <DialogTitle>Редактировать учителя</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            name="full_name"
+            label="ФИО"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={editingTeacher?.full_name}
+            onChange={handleEditChange}
+          />
+          <TextField
+            margin="dense"
+            name="room_number"
+            label="Номер кабинета"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={editingTeacher?.room_number}
+            onChange={handleEditChange}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditClose}>Отмена</Button>
+          <Button onClick={handleEditSubmit} variant="contained" color="primary">
+            Сохранить
           </Button>
         </DialogActions>
       </Dialog>
